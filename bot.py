@@ -46,14 +46,14 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
+fh = logging.FileHandler('bot.log')
+logger.addHandler(fh)
 CONSULT, FULL_NAME, EYELID, PHONE, END = range(5)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Starts the conversation and asks the user about their gender."""
     user = update.message.from_user
-    print(user.first_name)
+    logger.info('%s started the bot.', user.username)
     consult_button = InlineKeyboardButton('مشاوره رایگان با متخصص', callback_data='consult')
     keyboard = [[consult_button]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -75,12 +75,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return CONSULT
 
 async def button_hanlder(update:Update, context:ContextTypes.DEFAULT_TYPE):
+    selected_button = update.callback_query.data
+    user = update.message.from_user
+    logger.info('Button %s selected by %s', selected_button, user.username)
     await update.callback_query.message.reply_text('لطفا شهر محل سکونت خود را وارد کنید.👇')
     return FULL_NAME
 
 async def full_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
-    logger.info("fullname of %s", user.first_name)
+    city = update.message.text
+    logger.info("%s is the city of %s", user.first_name)
     await update.message.reply_text('لطفا نام و نام خانوادگی خود را وارد نمایید.👇👇👇')
     await context.bot.send_message(chat_id=-852229182, text=update.message.text)
     return EYELID
