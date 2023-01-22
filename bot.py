@@ -133,7 +133,7 @@ async def good_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 ☎️ متخصصین برای مشاوره رایگان و تعیین وقت با شما تماس خواهند گرفت."""
     await update.message.reply_text(text)
-    df = pd.read_excel('user_data.xlsx')
+    df = pd.read_excel('user_data.xlsx', engine='openpyxl')
 
     # Write the DataFrame back to the Excel file
     new_df = pd.DataFrame(user_data[user.username], index=[0])
