@@ -40,6 +40,8 @@ from telegram.ext import (
     filters,
     CallbackQueryHandler
 )
+import pandas as pd
+
 
 # Enable logging
 logging.basicConfig(
@@ -47,12 +49,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 fh = logging.FileHandler('bot.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger.addHandler(fh)
+fh.setFormatter(formatter)
 CONSULT, FULL_NAME, EYELID, PHONE, END = range(5)
 
-
+user_data = {}
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
+    user_data[user.username] = {}
     logger.info('%s started the bot.', user.username)
     consult_button = InlineKeyboardButton('مشاوره رایگان با متخصص', callback_data='consult')
     keyboard = [[consult_button]]
@@ -76,7 +81,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def button_hanlder(update:Update, context:ContextTypes.DEFAULT_TYPE):
     selected_button = update.callback_query.data
-    user = update.message.from_user
+    user = update.callback_query.from_user
     logger.info('Button %s selected by %s', selected_button, user.username)
     await update.callback_query.message.reply_text('لطفا شهر محل سکونت خود را وارد کنید.👇')
     return FULL_NAME
@@ -84,14 +89,16 @@ async def button_hanlder(update:Update, context:ContextTypes.DEFAULT_TYPE):
 async def full_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
     city = update.message.text
-    logger.info("%s is the city of %s", user.first_name)
+    logger.info("%s is the city of %s", city, user.username)
+    user_data[user.username]['شهر'] = city
     await update.message.reply_text('لطفا نام و نام خانوادگی خود را وارد نمایید.👇👇👇')
-    await context.bot.send_message(chat_id=-852229182, text=update.message.text)
     return EYELID
 
 
 async def eyelid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
+    logger.info('fullname of %s : %s', user.username, update.message.text)
+    user_data[user.username]['نام و نام خانوادگی'] = update.message.text
     eyelid_left= InlineKeyboardButton('پلک چپ', callback_data='left')
     eyelid_right= InlineKeyboardButton('پلک راست', callback_data='right')
     keyboard = [[eyelid_left, eyelid_right]]
@@ -100,26 +107,39 @@ async def eyelid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         'کدام پلک خود را تمایل دارید جراحی کنید؟👇👇👇.',
         reply_markup=reply_markup
     )
-    logger.info("the eylid is: %s", update.message.text)
+
     return PHONE
 
 
 async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    user = update.callback_query.message.from_user
-    logger.info("User %s did not send a photo.", user.first_name)
+    user = update.callback_query.from_user
+    logger.info("%s selected %s eyelid",user.username, update.callback_query.data)
+    eye = ''
+    if update.callback_query.data == 'right':
+        eye = 'راست'
+    else:
+        eye = 'چپ'
+    user_data[user.username]['پلک'] = eye
     await update.callback_query.message.reply_text('برای مشاوره رایگان با متخصصان و ثبت نام در لیست  تخفیف ویژه شماره تماس خود را وارد کنید. 👇👇👇')
     return END
 
 
 async def good_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
-    logger.info("User %s did not send a photo.", user.first_name)
+    logger.info("%s phone : %s", user.first_name, update.message.text)
+    user_data[user.username]['موبایل'] = update.message.text
     text = f"""🙏🏻تشکر {user.first_name} گرامی؛
-
 ✅ درخواست شما با موفقیت در سامانه کیلینیک الهام ثبت گردید.
 
 ☎️ متخصصین برای مشاوره رایگان و تعیین وقت با شما تماس خواهند گرفت."""
     await update.message.reply_text(text)
+    df = pd.read_excel('user_data.xlsx')
+    df = df.append(pd.DataFrame(user_data[user.username], index=[0]), ignore_index=True)
+
+    # Write the DataFrame back to the Excel file
+    df.to_excel('user_data.xlsx', index=False)
+    user_data.clear()
+    await context.bot.send_document(chat_id=-852229182, document='user_data.xlsx')
     return ConversationHandler.END
 
 
@@ -133,22 +153,20 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
-            CONSULT: [CallbackQueryHandler(button_hanlder)],
+            CONSULT: [CallbackQueryHandler(button_hanlder, pattern='^consult$')],
             FULL_NAME: [MessageHandler(filters.TEXT, full_name)],
             EYELID: [MessageHandler(filters.TEXT, eyelid)],
-            PHONE: [CallbackQueryHandler(get_phone)],
+            PHONE: [CallbackQueryHandler(get_phone, pattern='^(left|right)$')],
             END: [MessageHandler(filters.TEXT, good_bye)],
         },
         fallbacks=[]
     )
 
     application.add_handler(conv_handler)
-    application.add_handler(CallbackQueryHandler(button_hanlder, pattern='^consult$'))
-    application.add_handler(CallbackQueryHandler(get_phone, pattern='^(left|right)$'))
-
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
 
 
 if __name__ == "__main__":
     main()
+    print(user_data)
