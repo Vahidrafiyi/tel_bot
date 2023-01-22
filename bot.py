@@ -134,9 +134,10 @@ async def good_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 ☎️ متخصصین برای مشاوره رایگان و تعیین وقت با شما تماس خواهند گرفت."""
     await update.message.reply_text(text)
     df = pd.read_excel('user_data.xlsx')
-    df = df.append(pd.DataFrame(user_data[user.username], index=[0]), ignore_index=True)
 
     # Write the DataFrame back to the Excel file
+    new_df = pd.DataFrame(user_data[user.username], index=[0])
+    df = pd.concat([df, new_df], ignore_index=False)
     df.to_excel('user_data.xlsx', index=False)
     user_data.clear()
     await context.bot.send_document(chat_id=-852229182, document='user_data.xlsx')
@@ -169,4 +170,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    print(user_data)
