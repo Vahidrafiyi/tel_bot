@@ -133,14 +133,14 @@ async def good_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 ☎️ متخصصین برای مشاوره رایگان و تعیین وقت با شما تماس خواهند گرفت."""
     await update.message.reply_text(text)
-    df = pd.read_excel('user_data.xlsx', engine='openpyxl')
+    df = pd.read_excel('user_data.xlsx')
 
     # Write the DataFrame back to the Excel file
     new_df = pd.DataFrame(user_data[user.username], index=[0])
     df = pd.concat([df, new_df], ignore_index=False)
     df.to_excel('user_data.xlsx', index=False)
     user_data.clear()
-    await context.bot.send_document(chat_id=-852229182, document='user_data.xlsx')
+    await context.bot.send_document(chat_id=-1001618112364, document='user_data.xlsx')
     return ConversationHandler.END
 
 
@@ -148,7 +148,7 @@ async def good_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 def main() -> None:
     """Run the bot."""
     # Create the Application and pass it your bot's token.
-    application = Application.builder().token('5974728163:AAEE3v19L7GpiGC1WX4O5lpPY-XRo8vxg9g').build()
+    application = Application.builder().token('5849241070:AAEdawgN0e0Pa8NUsNpwwJpcsxgtuIhD4Ss').build()
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     conv_handler = ConversationHandler(
