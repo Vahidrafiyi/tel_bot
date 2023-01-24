@@ -13,8 +13,6 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
-import logging
-
 from telegram import __version__ as TG_VER
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -41,38 +39,39 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 import pandas as pd
+from logging_module import logger
 
 
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-fh = logging.FileHandler('bot.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger.addHandler(fh)
-fh.setFormatter(formatter)
 CONSULT, FULL_NAME, EYELID, PHONE, END = range(5)
-
-
+USERNAME = ''
 user_data = {}
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
-    user_data[user.username] = {}
-    logger.info('%s started the bot.', user.username)
-    consult_button = InlineKeyboardButton('مشاوره رایگان با متخصص', callback_data='consult')
-    keyboard = [[consult_button]]
+    global USERNAME
+    if len(user.username) == 0:
+        USERNAME = user.first_name
+    else:
+        USERNAME = user.username
+    user_data[USERNAME] = {}
+    print(USERNAME)
+    print(user_data[USERNAME])
+    logger.info('%s started the bot.', USERNAME)
+    laser = InlineKeyboardButton('لیزر و رفع موهای زائد', callback_data='laser')
+    thinness = InlineKeyboardButton('لاغری تضمینی', callback_data='thinness')
+    botox = InlineKeyboardButton('فرم‌دهی صورت، فیلر و بوتاکس', callback_data='botox')
+    skin = InlineKeyboardButton('جوان سازی و شادابی پوست', callback_data='skin')
+    keyboard = [[laser, thinness],[botox, skin]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     text =f"""
-    ✅ سلام {user.first_name} عزیز
+    {USERNAME} عزیز 👋🏻
 
-🔺 برای مشاوره تخصصی و رایگان جراحی افتادگی پلک توسط فوق تخصص جراحی پلاستیک بدون استفاده از تیغ با برش لیزری لازم است تا چند سوال کوتاه را پاسخ دهيد.
+| متخصصیـن ما در دیواژ  با بیش از چهل خدمت متنوع در کنار شما هستند، لطفاً دسته بندی مورد نظرتان را انتخاب نمایید 🌟
 
-💰  تخفیف ویژه
-
-💎 مشاوره تخصصی رفع افتادگی پلک بالا و پف پلک پایین توسط متخصص جراحی پلاستیک
-
-📣 پیشنهاد ویژه : برای مشاوره رایگان  با متخصصان و ثبت نام در لیست تخفیف ویژه به مدت محدود کلید زیر را فشار دهید 👇👇👇
+لیست کلید خدمات:
+1️⃣ لیزر و رفع موهای زائد
+2️⃣ لاغری تضمینی
+3️⃣ فرم‌دهی صورت، فیلر و بوتاکس
+4️⃣ جوان سازی و شادابی پوست
     """
 
     await update.message.reply_text(text,
@@ -81,17 +80,43 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return CONSULT
 
 async def button_hanlder(update:Update, context:ContextTypes.DEFAULT_TYPE):
+    print(f'username: {USERNAME}')
     selected_button = update.callback_query.data
-    user = update.callback_query.from_user
-    logger.info('Button %s selected by %s', selected_button, user.username)
-    await update.callback_query.message.reply_text('لطفا شهر محل سکونت خود را وارد کنید.👇')
+    selected_button_m = update.callback_query.message
+    print(selected_button_m)
+    logger.info('Button %s selected by %s', selected_button, USERNAME)
+    user_data[USERNAME]['نوع خدمت'] = selected_button
+    if selected_button == 'laser':
+        await update.callback_query.message.reply_text(""" 🎉 قراره برای همیشه از موهای زائد خلاص بشید؛
+ما در دیواژ از بهترین دستگاه های لیزر در جهان استفاده میکنیم
+
+صد درصد تضمینی و بدون درد  💚😌
+
+مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.""")
+    elif selected_button == 'thinness':
+        await update.callback_query.message.reply_text("""عالیــه، خودتان را برای یک استایل جدید آماده کنید 😌
+در دیواژ با بهترین دستگاه ها و خدمات لاغری بدن و صورت در خدمت شما هستیم. (حتی برای سلولیت!) ✨
+
+مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.
+""")
+    elif selected_button == 'botox':
+        await update.callback_query.message.reply_text("""جذابیت انتها نداره😌
+در دیواژ با خدمات مختلف فرم دهی بدون جراحی و با جراحی، تزریقات ژل و فیلر، PRP  و لیفت صورت در خدمتتون هستیم.  
+
+ مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.
+""")
+    else:
+        await update.callback_query.message.reply_text("""زیبـــاتر از همیشــه خواهید بود🤍
+ما برای رفع خط خنده، چروک های پوستی، خال‌برداری و هر موضوع دیگه ای، بهترین راهکار‌‌ ها رو براتون در نظر گرفتیم.  
+
+مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.
+""")
     return FULL_NAME
 
 async def full_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    user = update.message.from_user
-    city = update.message.text
-    logger.info("%s is the city of %s", city, user.username)
-    user_data[user.username]['شهر'] = city
+    fullname = update.message.text
+    logger.info("%s is the fullname of %s", fullname, USERNAME)
+    user_data[USERNAME]['نام و نام خانوادگی'] = fullname
     await update.message.reply_text('لطفا نام و نام خانوادگی خود را وارد نمایید.👇👇👇')
     return EYELID
 
@@ -135,13 +160,13 @@ async def good_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 ☎️ متخصصین برای مشاوره رایگان و تعیین وقت با شما تماس خواهند گرفت."""
     await update.message.reply_text(text)
     try:
-        df = pandas.read_excel('user_data.xlsx')
+        df = pd.read_excel('user_data.xlsx')
         new_df = pd.DataFrame(user_data[user.username], index=[0])
         df = pd.concat([df, new_df], ignore_index=False)
         df.to_excel('user_data.xlsx', index=False)
         user_data.clear()
     except:
-        df = pandas.DataFrame(user_data[user.username], index=[0])
+        df = pd.DataFrame(user_data[user.username], index=[0])
         df.to_excel('user_data.xlsx', index=False)
 
     await context.bot.send_document(chat_id=-1001618112364, document='user_data.xlsx')
@@ -158,7 +183,7 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
-            CONSULT: [CallbackQueryHandler(button_hanlder, pattern='^consult$')],
+            CONSULT: [CallbackQueryHandler(button_hanlder, pattern='^(laser|thinness|botox|skin)$')],
             FULL_NAME: [MessageHandler(filters.TEXT, full_name)],
             EYELID: [MessageHandler(filters.TEXT, eyelid)],
             PHONE: [CallbackQueryHandler(get_phone, pattern='^(left|right)$')],
