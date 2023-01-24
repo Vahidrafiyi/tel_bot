@@ -119,6 +119,7 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def goodbye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     phone = update.message.text
+    user_data[USERNAME]['موبایل'] = phone
     logger.info("%s sent his/her phone: %s", USERNAME, phone)
     if SERVICE == 'laser' or SERVICE == 'thinness':
         await update.message.reply_text("""ضمن تشکر از همراهی شما، (کد تخفیف ۱۵٪) روی شماره شما اعمال شد. مشاورین ما به زودی با شما تماس خواهند گرفت ✨⏳
