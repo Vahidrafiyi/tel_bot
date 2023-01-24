@@ -42,8 +42,9 @@ import pandas as pd
 from logging_module import logger
 
 
-CONSULT, FULL_NAME, EYELID, PHONE, END = range(5)
+FULLNAME, PHONE, GOODBYE = range(3)
 USERNAME = ''
+SERVICE = ''
 user_data = {}
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
@@ -53,8 +54,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     else:
         USERNAME = user.username
     user_data[USERNAME] = {}
-    print(USERNAME)
-    print(user_data[USERNAME])
     logger.info('%s started the bot.', USERNAME)
     laser = InlineKeyboardButton('لیزر و رفع موهای زائد', callback_data='laser')
     thinness = InlineKeyboardButton('لاغری تضمینی', callback_data='thinness')
@@ -66,112 +65,88 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     {USERNAME} عزیز 👋🏻
 
 | متخصصیـن ما در دیواژ  با بیش از چهل خدمت متنوع در کنار شما هستند، لطفاً دسته بندی مورد نظرتان را انتخاب نمایید 🌟
-
-لیست کلید خدمات:
-1️⃣ لیزر و رفع موهای زائد
-2️⃣ لاغری تضمینی
-3️⃣ فرم‌دهی صورت، فیلر و بوتاکس
-4️⃣ جوان سازی و شادابی پوست
     """
 
     await update.message.reply_text(text,
         reply_markup=reply_markup
     )
-    return CONSULT
+    return FULLNAME
 
-async def button_hanlder(update:Update, context:ContextTypes.DEFAULT_TYPE):
-    print(f'username: {USERNAME}')
+async def get_fullname(update:Update, context:ContextTypes.DEFAULT_TYPE):
     selected_button = update.callback_query.data
-    selected_button_m = update.callback_query.message
-    print(selected_button_m)
+    global SERVICE
+    SERVICE = selected_button
+    selected_button_m = update.callback_query.message.reply_markup.inline_keyboard
     logger.info('Button %s selected by %s', selected_button, USERNAME)
-    user_data[USERNAME]['نوع خدمت'] = selected_button
     if selected_button == 'laser':
-        await update.callback_query.message.reply_text(""" 🎉 قراره برای همیشه از موهای زائد خلاص بشید؛
+        message = selected_button_m[0][0].text
+        await update.callback_query.message.reply_text("""  🎉 قراره برای همیشه از موهای زائد خلاص بشید؛
 ما در دیواژ از بهترین دستگاه های لیزر در جهان استفاده میکنیم
 
 صد درصد تضمینی و بدون درد  💚😌
 
 مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.""")
     elif selected_button == 'thinness':
-        await update.callback_query.message.reply_text("""عالیــه، خودتان را برای یک استایل جدید آماده کنید 😌
+        message = selected_button_m[0][1].text
+        await update.callback_query.message.reply_text("""عالیــه، خودتون رو برای یک استایل جدید آماده کنید 😌
 در دیواژ با بهترین دستگاه ها و خدمات لاغری بدن و صورت در خدمت شما هستیم. (حتی برای سلولیت!) ✨
 
-مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.
-""")
+مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.""")
     elif selected_button == 'botox':
+        message = selected_button_m[1][0].text
         await update.callback_query.message.reply_text("""جذابیت انتها نداره😌
 در دیواژ با خدمات مختلف فرم دهی بدون جراحی و با جراحی، تزریقات ژل و فیلر، PRP  و لیفت صورت در خدمتتون هستیم.  
 
  مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.
 """)
     else:
+        message = selected_button_m[1][1].text
         await update.callback_query.message.reply_text("""زیبـــاتر از همیشــه خواهید بود🤍
 ما برای رفع خط خنده، چروک های پوستی، خال‌برداری و هر موضوع دیگه ای، بهترین راهکار‌‌ ها رو براتون در نظر گرفتیم.  
 
 مشاورین ما توضیحات کامل تری به شما خواهند داد. برای (مشاوره رایگان) و دریافت تخفیف ویژه دیواژ، لطفا «نام و نام خانوادگی» خود را وارد کنید.
 """)
-    return FULL_NAME
+    user_data[USERNAME]['نوع خدمت'] = message
+    return PHONE
 
-async def full_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     fullname = update.message.text
     logger.info("%s is the fullname of %s", fullname, USERNAME)
     user_data[USERNAME]['نام و نام خانوادگی'] = fullname
-    await update.message.reply_text('لطفا نام و نام خانوادگی خود را وارد نمایید.👇👇👇')
-    return EYELID
+    await update.message.reply_text("""مشتاق شنیدن صدای شما هستیم. 
+لطفاً شماره تماس خود را وارد کنید  ☎️""")
+    return GOODBYE
 
+async def goodbye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    phone = update.message.text
+    logger.info("%s sent his/her phone: %s", USERNAME, phone)
+    if SERVICE == 'laser' or SERVICE == 'thinness':
+        await update.message.reply_text("""ضمن تشکر از همراهی شما، (کد تخفیف ۱۵٪) روی شماره شما اعمال شد. مشاورین ما به زودی با شما تماس خواهند گرفت ✨⏳
 
-async def eyelid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    user = update.message.from_user
-    logger.info('fullname of %s : %s', user.username, update.message.text)
-    user_data[user.username]['نام و نام خانوادگی'] = update.message.text
-    eyelid_left= InlineKeyboardButton('پلک چپ', callback_data='left')
-    eyelid_right= InlineKeyboardButton('پلک راست', callback_data='right')
-    keyboard = [[eyelid_left, eyelid_right]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(
-        'کدام پلک خود را تمایل دارید جراحی کنید؟👇👇👇.',
-        reply_markup=reply_markup
-    )
+    🚘  اگر خودروی شخصی دارید، نگران جای پارک نباشید. ما براتون پارکینگ و محل پارک در نظر گرفتیم.
+    ☕  ضمن اینکه یک قهوه یا دمنوش در کافه کلینیک دیواژ میهمان ماهستید.
 
-    return PHONE
-
-
-async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    user = update.callback_query.from_user
-    logger.info("%s selected %s eyelid",user.username, update.callback_query.data)
-    eye = ''
-    if update.callback_query.data == 'right':
-        eye = 'راست'
+    •  •  •  بــه زودی میبینیـمتـــــــون 😍👌🏻""")
     else:
-        eye = 'چپ'
-    user_data[user.username]['پلک'] = eye
-    await update.callback_query.message.reply_text('برای مشاوره رایگان با متخصصان و ثبت نام در لیست  تخفیف ویژه شماره تماس خود را وارد کنید. 👇👇👇')
-    return END
+            await update.message.reply_text("""ضمن تشکر از همراهی شما، (کد تخفیف ۱۰٪) روی شماره شما اعمال شد. مشاورین ما به زودی با شما تماس خواهند گرفت ✨⏳
 
+ 🚘  اگر خودروی شخصی دارید، نگران جای پارک نباشید. ما براتون پارکینگ و محل پارک در نظر گرفتیم.
+ ☕️  ضمن اینکه یک قهوه یا دمنوش در کافه کلینیک دیواژ میهمان ماهستید.
 
-async def good_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    user = update.message.from_user
-    logger.info("%s phone : %s", user.first_name, update.message.text)
-    user_data[user.username]['موبایل'] = update.message.text
-    text = f"""🙏🏻تشکر {user.first_name} گرامی؛
-✅ درخواست شما با موفقیت در سامانه کیلینیک الهام ثبت گردید.
-
-☎️ متخصصین برای مشاوره رایگان و تعیین وقت با شما تماس خواهند گرفت."""
-    await update.message.reply_text(text)
+•  •  •  بــه زودی میبینیـمتـــــــون 😍""")
     try:
         df = pd.read_excel('user_data.xlsx')
-        new_df = pd.DataFrame(user_data[user.username], index=[0])
+        new_df = pd.DataFrame(user_data[USERNAME], index=[0])
         df = pd.concat([df, new_df], ignore_index=False)
         df.to_excel('user_data.xlsx', index=False)
         user_data.clear()
     except:
-        df = pd.DataFrame(user_data[user.username], index=[0])
+        df = pd.DataFrame(user_data[USERNAME], index=[0])
         df.to_excel('user_data.xlsx', index=False)
 
     await context.bot.send_document(chat_id=-1001618112364, document='user_data.xlsx')
+    logger.info('bye')
     return ConversationHandler.END
-
 
 
 def main() -> None:
@@ -183,11 +158,9 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
-            CONSULT: [CallbackQueryHandler(button_hanlder, pattern='^(laser|thinness|botox|skin)$')],
-            FULL_NAME: [MessageHandler(filters.TEXT, full_name)],
-            EYELID: [MessageHandler(filters.TEXT, eyelid)],
-            PHONE: [CallbackQueryHandler(get_phone, pattern='^(left|right)$')],
-            END: [MessageHandler(filters.TEXT, good_bye)],
+            FULLNAME: [CallbackQueryHandler(get_fullname, pattern='^(laser|thinness|botox|skin)$')],
+            PHONE: [MessageHandler(filters.TEXT, get_phone)],
+            GOODBYE: [MessageHandler(filters.TEXT, goodbye)],
         },
         fallbacks=[]
     )
